@@ -3,6 +3,13 @@ import math
 def dist(p1,p2):
     return math.sqrt((p1[1]-p2[1])**2+(p1[0]-p2[0])**2)       # euclidean distance between two points
 
+
+def print(path):
+    p = [] 
+    for x,y in path:
+        p.append([x,y])
+    return p
+
 def computeLineThroughTwoPoints(p1,p2):
     norm = dist(p1,p2)
     if norm < 10**(-8):
@@ -15,28 +22,35 @@ def computeDistancePointToLine(q,p1,p2):
     return math.abs(a*q[0]+b*q[1]+c)
 
 def computeDistancePointToSegment(q,p1,p2):
-    # using the concept of vectors, we can compute the distance of the point from segment
-    p1q = [[q[0]-p1[0]],[q[1]-p1[1]]]
-    p2q = [[q[0]-p2[0]],[q[1]-p2[1]]]
-    p1p2 = [[p2[0]-p1[0]],[p2[1]-p1[1]]]
-    
-    p1p2_p1q = p1p2[0]*p1q[0] + p1p2[1]*p1q[1]
-    p1p2_p2q = p1p2[0]*p2q[0] + p1p2[1]*p2q[1]
-
-    if p1p2_p1q < 0:
-        return  dist(q,p1)
-    
-    if p1p2_p2q > 0:
-        return  dist(q,p2)
-
-    else:
-        return computeDistancePointToLine(q,p1,p2)
+    # using the concept of vectors dot product, we can compute the distance of the point from segment
+    a,b,c = computeLineThroughTwoPoints(p1,p2)
+    proj = (-b*(q[0]-p1[0]) + a*(q[1]-p1[1])) / dist(p1,p2)
+    if proj <= 0:   return dist(p1,q), 1
+    elif proj >= 1:   return dist(p2,q), 2
+    else:   return computeDistancePointToLine(q,p1,p2), 0 
 
 def computeDistancePointToPolygon(q,P):
-    closest = math.inf
+    min_dist = math.inf 
+    n = len(P)
     for i in range(len(P)):
-        closest = min(closest, computeDistancePointToLine(P[(i)%len(P)],P[(i+1)%len(P)],q))
-    return closest
+        dist, wt = computeDistancePointToSegment(q,P[i%n],P[(i+1)%n])
+        if dist < min_dist:
+            min_dist, w, index = dist, wt, i
+    return min_dist, w, index
 
 def computeTangentVectorToPolygon(q,P):
-    pass 
+    min_dist, w, index = computeDistancePointToPolygon(q,P)
+    n = len(arr)
+    if w == 0:
+        tot = 0
+        for i in range(n):
+            tot += (P[i%n][0]-P[(i+1)%n][0])*(P[i%n][1]-P[(i+1)%n][1])
+        d = dist((P[index%n],P[(index+1)%n]))
+        if tot > 0: return  -((P[index%n][0]-P[(index+1)%n][0]))/d, -(P[index%n][1]-P[(index+1)%n][1])/d
+        else: return  (P[index%n][0]-P[(index+1)%n][0])/d, (P[index%n][1]-P[(index+1)%n][1])/d
+    if w == 1:
+        a,b,c = computeLineThroughTwoPoints(q,P[index%n])
+        return  a-0.1*b, b+0.1*a 
+    else: 
+        a,b,c = computeLineThroughTwoPoints(q,P[(index+1)%n])
+        return  a-0.1*b, b+0.1*a 
