@@ -1,14 +1,8 @@
 import math 
 
 def dist(p1,p2):
+    # print(p1, p2)
     return math.sqrt((p1[1]-p2[1])**2+(p1[0]-p2[0])**2)       # euclidean distance between two points
-
-
-def print(path):
-    p = [] 
-    for x,y in path:
-        p.append([x,y])
-    return p
 
 def computeLineThroughTwoPoints(p1,p2):
     norm = dist(p1,p2)
@@ -19,7 +13,7 @@ def computeLineThroughTwoPoints(p1,p2):
 
 def computeDistancePointToLine(q,p1,p2):
     [a,b,c] = computeLineThroughTwoPoints(p1,p2)
-    return math.abs(a*q[0]+b*q[1]+c)
+    return abs(a*q[0]+b*q[1]+c)
 
 def computeDistancePointToSegment(q,p1,p2):
     # using the concept of vectors dot product, we can compute the distance of the point from segment
@@ -39,6 +33,8 @@ def computeDistancePointToPolygon(q,P):
     return min_dist, w, index
 
 def computeTangentVectorToPolygon(q,P):
+    # if not isinstance(P[0], Point):
+    #     P = conv_arr(P)
     min_dist, w, index = computeDistancePointToPolygon(q,P)
     n = len(arr)
     if w == 0:

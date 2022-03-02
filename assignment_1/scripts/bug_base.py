@@ -10,24 +10,26 @@ import math
 def read(filename):
     file = open(filename, "r")
     lines = file.readlines()
-    start_x, start_y = lines[0].rstrip()
-    start = [start_x, start_y]
-    goal_x, goal_y = lines[1].rstrip()
-    goal = [goal_x, goal_y]
-    step_size = lines[2].rstrip()
+    start_x, start_y = lines[0].split(',')
+    start = [float(start_x), float(start_y)]
+    goal_x, goal_y = lines[1].split(',')
+    goal = [float(goal_x), float(goal_y)]
+    step_size = float(lines[2])
     line = lines[3:]
     obstaclesList = []
     tmp = []
     for i, obs in enumerate(line):
-        if obs=="\n":
-            temp = []
-            if i != 1:    
-                obstaclesList.append(tmp)   
+        if obs == "\n":
+            tmp = []
+            obstaclesList.append(tmp)
             continue
         obs = obs.split('\n')
         for j in obs:
-            tmp.append([j.rstrip()])
-    return start, goal, step_size, obstaclesList
+            if not j == "":
+                x,y = j.split(',')
+                tmp.append((float(x), float(y)))
+
+    return start, goal, step_size, obstaclesList 
 
 def write(path):
     filename = "output_base.txt"
@@ -38,7 +40,7 @@ def write(path):
 
 def forward(curr_pos, goal, step_size):
     a, b = goal[0]-curr_pos[0], goal[1]-curr_pos[1]
-    norm = math.sqrt(a,b)
+    norm = math.sqrt(a**2+b**2)
     return [curr_pos[0]+step_size*a/norm, curr_pos[1]+step_size*b/norm]
 
 def update(curr_pos, new_pos, client):
@@ -55,7 +57,7 @@ def update(curr_pos, new_pos, client):
 
     #write to output file (replacing the part below)
     print(result.pose_final.x, result.pose_final.y, result.pose_final.theta)
-    return [result.pose_final[0], result.pose_final[1]]
+    return [result.pose_final.x, result.pose_final.y]
 
 def bug_base(start, goal, step_size, obstaclesList):
     rospy.init_node('test', anonymous= True)
@@ -64,11 +66,10 @@ def bug_base(start, goal, step_size, obstaclesList):
 
     curr_pos = start 
     path = []
-
     while dist(curr_pos, goal) > step_size:
         min_dist = math.inf
         for i in obstaclesList:
-            d,_,_ = computeDistancePointToPolygon(i, curr_pos)
+            d,_,_ = computeDistancePointToPolygon(curr_pos, i)
             min_dist = min(d, min_dist)
         if min_dist < step_size:
             print("Failure: There is an obstacle lying between the start and goal \n")
@@ -77,6 +78,7 @@ def bug_base(start, goal, step_size, obstaclesList):
         last_pos = curr_pos
         curr_pos = forward(curr_pos, goal, step_size)
         curr_pos = update(last_pos, curr_pos, client)
+        print(path)
         path.append(curr_pos)
 
     print("Success")
@@ -85,21 +87,6 @@ def bug_base(start, goal, step_size, obstaclesList):
     return path
 
 if __name__ == '__main__':
-    filename = "~/catkin_ws/src/sc627_assignments/assignment_1/input.txt"
+    filename = "/home/dikshant/catkin_ws/src/sc627_assignments/assignment_1/input.txt"
     start, goal, step_size, obstaclesList = read(filename)
     bug_base(start, goal, step_size, obstaclesList)
-
-
-'''
-from root import *
-
-algo = 'base'
-filename = "src/sc627_assignments/assignment_1/input.txt"
-start, goal, obs_list, step_size = read_file(filename)
-params = bug_base_algo(start, goal, obs_list, step_size)
-write_to_file(params, algo)
-plot_graphs(params, obs_list, algo)
-print("Total time taken: ", params['time'][-1])
-print("Total length covered: ", params['total_dist'])
-
-'''
