@@ -56,6 +56,6 @@ def bug_base(start, goal, step_size, obstaclesList):
     return path
 
 if __name__ == '__main__':
-    filename = "/home/dikshant/catkin_ws/src/sc627_assignments/assignment_1/input.txt"
+    filename = os.getcwd()+"/src/sc627_assignments/assignment_1/input.txt"
     start, goal, step_size, obstaclesList = read(filename)
     bug_base(start, goal, step_size, obstaclesList)

@@ -7,8 +7,9 @@ from helper import *
 from path import *
 import math
 import time 
-
+import os
 import matplotlib.pyplot as plt 
+
 
 def forward(curr_pos, goal, step_size):
     a, b = goal[0]-curr_pos[0], goal[1]-curr_pos[1]
@@ -78,7 +79,7 @@ def update(curr_pos, new_pos, client):
 def bug_1(start, goal, step_size, obstaclesList):
     rospy.init_node('test', anonymous= True)
     client = actionlib.SimpleActionClient('move_xy', MoveXYAction)
-    # client.wait_for_server()
+    client.wait_for_server()
 
     total_distance = 0 
     time_elapsed = []
@@ -118,6 +119,6 @@ def bug_1(start, goal, step_size, obstaclesList):
     return path
 
 if __name__ == '__main__':
-    filename = "/home/dikshant/catkin_ws/src/sc627_assignments/assignment_1/input.txt"
+    filename = os.getcwd()+"/src/sc627_assignments/assignment_1/input.txt"
     start, goal, step_size, obstaclesList = read(filename)
     bug_1(start, goal, step_size, obstaclesList)

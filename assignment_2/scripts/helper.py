@@ -8,10 +8,10 @@ def computeLineThroughTwoPoints(p1,p2):
     if norm < 10**(-8):
         print("identical points")
         return None
-    return [(p2[1]-p1[1])/norm,(p1[0]-p2[0])/norm,(p1[1]*p2[0]-p1[0]*p2[1])/norm]   # eq of plane passing through these points
+    return (p2[1]-p1[1])/norm,(p1[0]-p2[0])/norm,(p1[1]*p2[0]-p1[0]*p2[1])/norm  # eq of plane passing through these points
 
 def computeDistancePointToLine(q,p1,p2):
-    [a,b,c] = computeLineThroughTwoPoints(p1,p2)
+    a,b,c = computeLineThroughTwoPoints(p1,p2)
     return abs(a*q[0]+b*q[1]+c)
 
 def computeDistancePointToSegment(q,p1,p2):
@@ -23,7 +23,7 @@ def computeDistancePointToSegment(q,p1,p2):
     else:   return computeDistancePointToLine(q,p1,p2), 0 
 
 def computeDistancePointToPolygon(q,P):
-    min_dist = math.inf 
+    min_dist = float("inf")
     n = len(P)
     for i in range(len(P)):
         dist, wt = computeDistancePointToSegment(q,P[i%n],P[(i+1)%n])

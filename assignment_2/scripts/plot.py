@@ -4,11 +4,12 @@ import matplotlib.pyplot as plt
 
 def plot(algo):
 	filename = os.getcwd()+"/src/sc627_assignments/assignment_1/input.txt"
+	filename = "/home/dikshant/catkin_ws/src/sc627_assignments/assignment_1/input.txt"
 	start, goal, step_size, obstaclesList = read(filename)
 
 	# plotting start, goal and obstacles
 	for obs in range(len(obstaclesList)):
-		plt.gca().add_patch(plt.Polygon(obstaclesList[obs], color = "cyan"))
+		plt.gca().add_patch(plt.Polygon(obstaclesList[obs], color = "cyan", fill = False))
 
 	plt.scatter(start[0], start[1])
 	plt.scatter(goal[0], goal[1])
