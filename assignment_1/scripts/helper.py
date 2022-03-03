@@ -44,7 +44,7 @@ def computeTangentVectorToPolygon(q,P):
         else: return  (P[index%n][0]-P[(index+1)%n][0])/d, (P[index%n][1]-P[(index+1)%n][1])/d
     if w == 1:
         a,b,c = computeLineThroughTwoPoints(q,P[index%n])
-        return  a-0.3*b, b+0.3*a 
+        return  a-b, b+a 
     else: 
         a,b,c = computeLineThroughTwoPoints(q,P[(index+1)%n])
-        return  a-0.3*b, b+0.3*a 
+        return  a-b, b+a 

@@ -4,39 +4,7 @@ from sc627_helper.msg import MoveXYAction, MoveXYGoal, MoveXYResult
 import rospy
 import actionlib
 from helper import *
-import math
-
-
-def read(filename):
-    file = open(filename, "r")
-    lines = file.readlines()
-    start_x, start_y = lines[0].split(',')
-    start = [float(start_x), float(start_y)]
-    goal_x, goal_y = lines[1].split(',')
-    goal = [float(goal_x), float(goal_y)]
-    step_size = float(lines[2])
-    line = lines[3:]
-    obstaclesList = []
-    tmp = []
-    for i, obs in enumerate(line):
-        if obs == "\n":
-            tmp = []
-            obstaclesList.append(tmp)
-            continue
-        obs = obs.split('\n')
-        for j in obs:
-            if not j == "":
-                x,y = j.split(',')
-                tmp.append((float(x), float(y)))
-
-    return start, goal, step_size, obstaclesList 
-
-def write(path):
-    filename = "output_base.txt"
-    file = open(filename, "w")
-    for i in path:
-        file.write(str[i][0]+", "+str[i][1]+"\n")
-    file.close()
+from path import *
 
 def forward(curr_pos, goal, step_size):
     a, b = goal[0]-curr_pos[0], goal[1]-curr_pos[1]
@@ -67,21 +35,20 @@ def bug_base(start, goal, step_size, obstaclesList):
     curr_pos = start 
     path = []
     while dist(curr_pos, goal) > step_size:
-        min_dist = math.inf
+        min_dist = float("inf")
         for i in obstaclesList:
             d,_,_ = computeDistancePointToPolygon(curr_pos, i)
             min_dist = min(d, min_dist)
         if min_dist < step_size:
-            write(path, "base")
             print("Failure: There is an obstacle lying between the start and goal \n")
-            return None 
+            write(path, "base")
+            return path 
 
         last_pos = curr_pos
         curr_pos = forward(curr_pos, goal, step_size)
         curr_pos = update(last_pos, curr_pos, client)
-        print(path)
         path.append(curr_pos)
-    path.append(goal)
+    # path.append(goal)
     print("Success")
     write(path, "base")
 

@@ -21,7 +21,7 @@ def circumnavigate(p_hit, obs, goal, step_size, client, path):
     min_dist = dist(curr_pos, goal)
     wp = 0 
     count = 0 
-    while dist(curr_pos, p_hit) > 2*step_size or count < 3:
+    while dist(curr_pos, p_hit) > 2*step_size or count < 4:
         d = dist(curr_pos, goal)
         count += 1
         if d < min_dist:
@@ -32,7 +32,7 @@ def circumnavigate(p_hit, obs, goal, step_size, client, path):
         wp = wt 
         last_pos = curr_pos
         curr_pos = move(curr_pos, x, y, step_size)
-        # curr_pos = update(last_pos, curr_pos, client)
+        curr_pos = update(last_pos, curr_pos, client)
         path.append(curr_pos)
     return p_leave, curr_pos
 
@@ -44,44 +44,35 @@ def leave(p_leave, curr_pos, obs, goal, step_size, client, path):
         wp = wt 
         last_pos = curr_pos
         curr_pos = move(curr_pos, x, y, step_size)
-        # curr_pos = update(last_pos, curr_pos, client)
+        curr_pos = update(last_pos, curr_pos, client)
         path.append(curr_pos)
-    co_x = 0 
-    co_y = 0
-    for o in obs:
-        co_x += o[0]
-        co_y += o[1]
-    vec1 = [curr_pos[0]-co_x, curr_pos[1] - co_y]
-    vec2 = [curr_pos[0]-goal[0], curr_pos[1] - goal[1]]
-    if vec1[0]*vec2[0] + vec1[1]*vec2[1] > 0:
-        print("Unable to reach the goal location")
     return curr_pos
 
-# def update(curr_pos, new_pos, client):
-#     wp = MoveXYGoal()
-#     wp.pose_dest.x = new_pos[0]
-#     wp.pose_dest.y = new_pos[1]
-#     wp.pose_dest.theta = math.atan2((new_pos[1]-curr_pos[1]),(new_pos[0]-curr_pos[0]))
-    #send waypoint to turtlebot3 via move_xy server
-    # client.send_goal(wp)
-    # client.wait_for_result()
+def update(curr_pos, new_pos, client):
+    wp = MoveXYGoal()
+    wp.pose_dest.x = new_pos[0]
+    wp.pose_dest.y = new_pos[1]
+    wp.pose_dest.theta = math.atan2((new_pos[1]-curr_pos[1]),(new_pos[0]-curr_pos[0]))
+    # send waypoint to turtlebot3 via move_xy server
+    client.send_goal(wp)
+    client.wait_for_result()
 
-    #getting updated robot location
-    # result = client.get_result()
+    # getting updated robot location
+    result = client.get_result()
 
-    #write to output file (replacing the part below)
-    # print(result.pose_final.x, result.pose_final.y, result.pose_final.theta)
-    # return [result.pose_final.x, result.pose_final.y]
+    # write to output file (replacing the part below)
+    print(result.pose_final.x, result.pose_final.y, result.pose_final.theta)
+    return [result.pose_final.x, result.pose_final.y]
 
 def bug_1(start, goal, step_size, obstaclesList):
     rospy.init_node('test', anonymous= True)
     client = actionlib.SimpleActionClient('move_xy', MoveXYAction)
-    # client.wait_for_server()
+    client.wait_for_server()
 
     curr_pos = start 
     path = [curr_pos]
     while dist(curr_pos, goal) > step_size:
-        min_dist = math.inf
+        min_dist = float("inf")
         for obs in obstaclesList:
             d,_,_ = computeDistancePointToPolygon(curr_pos, obs)
             if d < min_dist:
@@ -94,8 +85,7 @@ def bug_1(start, goal, step_size, obstaclesList):
 
         last_pos = curr_pos
         curr_pos = forward(curr_pos, goal, step_size)
-        # curr_pos = update(last_pos, curr_pos, client)
-        print(path)
+        curr_pos = update(last_pos, curr_pos, client)
         path.append(curr_pos)
     path.append(goal)
     print("Success")
