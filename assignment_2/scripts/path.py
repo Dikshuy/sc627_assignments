@@ -1,3 +1,5 @@
+import os
+
 def read(filename):
     file = open(filename, "r")
     lines = file.readlines()
@@ -22,8 +24,8 @@ def read(filename):
 
     return start, goal, step_size, obstaclesList 
 
-def write(path, algo):
-    filename = "output_"+algo+".txt"
+def write(path):
+    filename = os.getcwd()+"/src/sc627_assignments/assignment_2/output.txt"
     file = open(filename, "w")
     for i in path:
         file.write(str(i[0])+", "+str(i[1])+"\n")

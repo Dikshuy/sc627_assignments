@@ -2,9 +2,8 @@ from path import *
 import os
 import matplotlib.pyplot as plt 
 
-def plot(algo):
-	filename = os.getcwd()+"/src/sc627_assignments/assignment_1/input.txt"
-	filename = "/home/dikshant/catkin_ws/src/sc627_assignments/assignment_1/input.txt"
+def plot():
+	filename = os.getcwd()+"/src/sc627_assignments/assignment_2/input.txt"
 	start, goal, step_size, obstaclesList = read(filename)
 
 	# plotting start, goal and obstacles
@@ -15,7 +14,7 @@ def plot(algo):
 	plt.scatter(goal[0], goal[1])
 
 	# plotting the traced path
-	filename = os.getcwd()+"/src/sc627_assignments/assignment_1/scripts/output_"+algo+".txt"
+	filename = os.getcwd()+"/src/sc627_assignments/assignment_2/output.txt"
 	file = open(filename, "r")
 	lines = file.readlines()
 	X, Y = [], []
@@ -27,7 +26,6 @@ def plot(algo):
 
 	plt.show()
 
-if __name__ == "__main__":
-	algo = input("For bug_base, enter base and for bug1, enter 1: ")  
-	plot(algo)
+if __name__ == "__main__":  
+	plot()
 	
