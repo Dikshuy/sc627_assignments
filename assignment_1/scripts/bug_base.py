@@ -72,6 +72,7 @@ def bug_base(start, goal, step_size, obstaclesList):
             d,_,_ = computeDistancePointToPolygon(curr_pos, i)
             min_dist = min(d, min_dist)
         if min_dist < step_size:
+            write(path, "base")
             print("Failure: There is an obstacle lying between the start and goal \n")
             return None 
 
@@ -80,9 +81,9 @@ def bug_base(start, goal, step_size, obstaclesList):
         curr_pos = update(last_pos, curr_pos, client)
         print(path)
         path.append(curr_pos)
-
+    path.append(goal)
     print("Success")
-    write(path)
+    write(path, "base")
 
     return path
 

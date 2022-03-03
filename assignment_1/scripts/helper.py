@@ -33,20 +33,18 @@ def computeDistancePointToPolygon(q,P):
     return min_dist, w, index
 
 def computeTangentVectorToPolygon(q,P):
-    # if not isinstance(P[0], Point):
-    #     P = conv_arr(P)
     min_dist, w, index = computeDistancePointToPolygon(q,P)
-    n = len(arr)
+    n = len(P)
     if w == 0:
         tot = 0
         for i in range(n):
             tot += (P[i%n][0]-P[(i+1)%n][0])*(P[i%n][1]-P[(i+1)%n][1])
-        d = dist((P[index%n],P[(index+1)%n]))
+        d = dist(P[index%n],P[(index+1)%n])
         if tot > 0: return  -((P[index%n][0]-P[(index+1)%n][0]))/d, -(P[index%n][1]-P[(index+1)%n][1])/d
         else: return  (P[index%n][0]-P[(index+1)%n][0])/d, (P[index%n][1]-P[(index+1)%n][1])/d
     if w == 1:
         a,b,c = computeLineThroughTwoPoints(q,P[index%n])
-        return  a-0.1*b, b+0.1*a 
+        return  a-0.3*b, b+0.3*a 
     else: 
         a,b,c = computeLineThroughTwoPoints(q,P[(index+1)%n])
-        return  a-0.1*b, b+0.1*a 
+        return  a-0.3*b, b+0.3*a 
