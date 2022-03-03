@@ -1,7 +1,6 @@
 import math 
 
 def dist(p1,p2):
-    # print(p1, p2)
     return math.sqrt((p1[1]-p2[1])**2+(p1[0]-p2[0])**2)       # euclidean distance between two points
 
 def computeLineThroughTwoPoints(p1,p2):
@@ -35,6 +34,7 @@ def computeDistancePointToPolygon(q,P):
 def computeTangentVectorToPolygon(q,P):
     min_dist, w, index = computeDistancePointToPolygon(q,P)
     n = len(P)
+    fac = 1.2
     if w == 0:
         tot = 0
         for i in range(n):
@@ -44,7 +44,7 @@ def computeTangentVectorToPolygon(q,P):
         else: return  (P[index%n][0]-P[(index+1)%n][0])/d, (P[index%n][1]-P[(index+1)%n][1])/d
     if w == 1:
         a,b,c = computeLineThroughTwoPoints(q,P[index%n])
-        return  a-b, b+a 
+        return  a-fac*b, b+fac*a 
     else: 
         a,b,c = computeLineThroughTwoPoints(q,P[(index+1)%n])
-        return  a-b, b+a 
+        return  a-fac*b, b+fac*a 

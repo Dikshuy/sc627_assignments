@@ -6,6 +6,7 @@ import actionlib
 from helper import *
 from path import *
 
+
 def forward(curr_pos, goal, step_size):
     a, b = goal[0]-curr_pos[0], goal[1]-curr_pos[1]
     norm = math.sqrt(a**2+b**2)
@@ -48,7 +49,7 @@ def bug_base(start, goal, step_size, obstaclesList):
         curr_pos = forward(curr_pos, goal, step_size)
         curr_pos = update(last_pos, curr_pos, client)
         path.append(curr_pos)
-    # path.append(goal)
+    path.append(goal)
     print("Success")
     write(path, "base")
 
