@@ -18,16 +18,33 @@ def attractive_potential(curr_pos, goal, d_star):
     else:
         return d_star*0.8*d - 0.5*0.8*(d_star**2)
 
+def attractive_potential_gradient(curr_pos, goal, d_star):
+    d = dist(curr_pos, goal)
+    if d < d_star:
+        return [0.8*(curr_pos[0]-goal[0]), 0.8*(curr_pos[1]-goal[1])]
+    else:
+        return [d_star*0.8*(curr_pos[0]-goal[0])/d, d_star*0.8*(curr_pos[1]-goal[1])/d]
+
 def repulsive_potential(curr_pos, obstaclesList, q_star):
     pot = 0 
     for i in range(len(obstaclesList)):
         d_i,_,_= computeDistancePointToPolygon(curr_pos, obstaclesList[i])
-        # print(d_i, q_star)
         if d_i < q_star:
             pot += 0.5*0.8*(1/d_i - 1/q_star)**2
         else:
             pot += 0 
     return pot 
+
+def repulsive_potential_gradient(curr_pos, obstaclesList, q_star):
+    grad = [0, 0]
+    for i in range(len(obstaclesList)):
+        d_i,_,_= computeDistancePointToPolygon(curr_pos, obstaclesList[i])
+        dx, dy = computeTangentVectorToPolygon(curr_pos, obstaclesList[i])
+        # print(d_i, q_star)
+        if d_i < q_star:
+            grad[0] += 0.8*(1/q_star-1/d_i)*(-dy)/(d_i)**2
+            grad[1] += 0.8*(1/q_star-1/d_i)*(dx)/(d_i)**2
+    return grad
 
 def forward(curr_pos, goal, step_size):
     a, b = goal[0]-curr_pos[0], goal[1]-curr_pos[1]
@@ -38,19 +55,21 @@ def potential(start, goal, step_size, obstaclesList):
     potential = 0 
     d_star, q_star = 2, 2
     curr_pos = start
+    # attg = attractive_potential_gradient(curr_pos, goal, q_star)
     path = [start]
     while dist(curr_pos, goal) > step_size:
-        min_dist = float("inf")
-        for obs in obstaclesList:
-            d,_,_ = computeDistancePointToPolygon(curr_pos, obs)
-            if d < min_dist:
-                min_dist = d
-                closest_obs = obs
+        att_grad = attractive_potential_gradient(curr_pos, goal, d_star)
+        rep_grad = repulsive_potential_gradient(curr_pos, obstaclesList, q_star)
+        grad_x = att_grad[0]+rep_grad[0]
+        grad_y = att_grad[1]+rep_grad[1]
 
-        if potential >= 0:
-            potential += attractive_potential(curr_pos, goal, d_star) + repulsive_potential(curr_pos, obstaclesList, q_star)
-            curr_pos = forward(curr_pos, goal, step_size)
+        curr_pos[0] = curr_pos[0] - grad_x*step_size
+        curr_pos[1] = curr_pos[1] - grad_y*step_size
+        print(att_grad, rep_grad)
+        print("grad:", grad_x, grad_y, "pos:", curr_pos)
+        print()
         path.append(curr_pos)
+
     path.append(goal)
     write(path)
     # print(path)
