@@ -25,7 +25,7 @@ def computeDistancePointToSegment(q,p1,p2):
 def computeDistancePointToPolygon(q,P):
     min_dist = float("inf")
     n = len(P)
-    for i in range(len(P)):
+    for i in range(n):
         dist, wt = computeDistancePointToSegment(q,P[i%n],P[(i+1)%n])
         if dist < min_dist:
             min_dist, w, index = dist, wt, i

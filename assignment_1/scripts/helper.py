@@ -34,7 +34,7 @@ def computeDistancePointToPolygon(q,P):
 def computeTangentVectorToPolygon(q,P):
     min_dist, w, index = computeDistancePointToPolygon(q,P)
     n = len(P)
-    fac = 1.2
+    fac = 0.3
     if w == 0:
         tot = 0
         for i in range(n):

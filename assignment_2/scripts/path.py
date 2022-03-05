@@ -20,7 +20,7 @@ def read(filename):
         for j in obs:
             if not j == "":
                 x,y = j.split(',')
-                tmp.append((float(x), float(y)))
+                tmp.append([float(x), float(y)])
 
     return start, goal, step_size, obstaclesList 
 
