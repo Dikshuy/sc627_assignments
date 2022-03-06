@@ -31,7 +31,7 @@ def computeDistancePointToPolygon(q,P):
             min_dist, w, index = dist, wt, i
     return min_dist, w, index
 
-def computeTangentVectorToPolygon(q,P):
+def computeNormalVectorToPolygon(q,P):
     min_dist, w, index = computeDistancePointToPolygon(q,P)
     n = len(P)
     fac = 1.2

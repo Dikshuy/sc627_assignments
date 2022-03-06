@@ -66,7 +66,7 @@ def repulsive_potential_gradient(curr_pos, obstaclesList, q_star, eta):
     for i in range(n):
         d_i,_,_= computeDistancePointToPolygon(curr_pos, obstaclesList[i])
         if d_i < q_star:
-            del_x, del_y= computeTangentVectorToPolygon(curr_pos, obstaclesList[i])
+            del_x, del_y= computeNormalVectorToPolygon(curr_pos, obstaclesList[i])
             grad[0] += (eta*(-1/q_star+1/d_i)*(del_x))*(1/(d_i)**2)
             grad[1] += (eta*(-1/q_star+1/d_i)*(del_y))*(1/(d_i)**2)
     return grad
