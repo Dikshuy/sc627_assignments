@@ -21,7 +21,7 @@ def velocity_convert(x, y, theta, vel_x, vel_y):
 
     v_lin =  min(max(vel_x, - VEL_MAX), VEL_MAX)
     v_ang = 0
-    print(v_lin,v_ang)
+    
     return v_lin, v_ang
 
 def callback_odom(data):
