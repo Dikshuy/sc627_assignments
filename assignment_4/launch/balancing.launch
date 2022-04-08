@@ -12,7 +12,7 @@
   <arg name="bot_1_x_pos" default="0.0"/>
   <arg name="bot_1_y_pos" default="0.0"/>
   <arg name="bot_1_z_pos" default="0.0"/>
-  <arg name="bot_1_yaw"   default="0"/>
+  <arg name="bot_1_yaw"   default="0.0"/>
 
   <arg name="bot_2_x_pos" default="1.5"/>
   <arg name="bot_2_y_pos" default="0.0"/>
@@ -32,7 +32,7 @@
   <arg name="bot_5_x_pos" default="5.6"/>
   <arg name="bot_5_y_pos" default="0.0"/>
   <arg name="bot_5_z_pos" default="0.0"/>
-  <arg name="bot_5_yaw"   default="0"/>
+  <arg name="bot_5_yaw"   default="0.0"/>
 
   <arg name="bot_6_x_pos" default="9"/>
   <arg name="bot_6_y_pos" default="0.0"/>
