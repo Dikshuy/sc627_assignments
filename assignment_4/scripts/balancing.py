@@ -19,7 +19,7 @@ def callback_odom(data):
     '''
     Get robot data
     '''
-    # print(data)
+    print(data)
     robot_pos[0] = data.pose.pose.position.x 
     robot_pos[1] = data.pose.pose.position.y 
     vel = data.twist.twist.linear.x 
@@ -34,7 +34,7 @@ def callback_left_odom(data):
     Get left robot data
     '''
     print('left robot')
-    # print(data)
+    print(data)
     left_robot_pos[0] = data.pose.pose.position.x 
     left_robot_pos[1] = data.pose.pose.position.y 
     left_vel = data.twist.twist.linear.x 
@@ -46,7 +46,7 @@ def callback_right_odom(data):
     Get right robot data
     '''
     print('right robot')
-    # print(data)
+    print(data)
     right_robot_pos[0] = data.pose.pose.position.x 
     right_robot_pos[1] = data.pose.pose.position.y 
     right_vel = data.twist.twist.linear.x 
@@ -83,7 +83,6 @@ def balancing():
         u = dist(robot_pos, right_robot_pos)-dist(robot_pos, left_robot_pos)
         v_x = 1.2*u        # P controller
         # print(v_x)
-    
         #convert velocity vector to linear and angular velocties using velocity_convert function given above
         v_lin, v_ang = velocity_convert(robot_pos[0], robot_pos[1], yaw, v_x, 0.0)
         #publish the velocities below
