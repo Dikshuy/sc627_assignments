@@ -1,28 +1,19 @@
 #!/usr/bin/env python3
 
 import rospy
+import matplotlib.pyplot as plt
 from sc627_helper.msg import ObsData
 from geometry_msgs.msg import Twist
 from nav_msgs.msg import Odometry
 from tf.transformations import euler_from_quaternion
 import math
+import time
 
 ANG_MAX = math.pi/18
 VEL_MAX = 0.15
 
 def dist(p1,p2):
     return math.sqrt((p1[1]-p2[1])**2+(p1[0]-p2[0])**2)
-
-def velocity_convert(x, y, theta, vel_x, vel_y):
-    '''
-    Robot pose (x, y, theta)  Note - theta in (0, 2pi)
-    Velocity vector (vel_x, vel_y)
-    '''
-
-    v_lin =  min(max(vel_x, - VEL_MAX), VEL_MAX)
-    v_ang = 0
-    
-    return v_lin, v_ang
 
 def callback_odom(data):
     '''
@@ -33,8 +24,10 @@ def callback_odom(data):
     robot_pos[1] = data.pose.pose.position.y 
     vel = data.twist.twist.linear.x 
     roll, pitch, yaw = euler_from_quaternion([data.pose.pose.orientation.x, data.pose.pose.orientation.y, data.pose.pose.orientation.z, data.pose.pose.orientation.w])
-    ang_vel = data.twist.twist.angular.z
-    return robot_pos, vel, yaw, ang_vel
+    path[0].append(robot_pos[0])
+    path[1].append(robot_pos[1])
+    total_time.append(time.time()-t_start)
+    return robot_pos, vel, yaw
 
 def callback_left_odom(data):
     '''
@@ -60,6 +53,22 @@ def callback_right_odom(data):
     roll, pitch, yaw_right = euler_from_quaternion([data.pose.pose.orientation.x, data.pose.pose.orientation.y, data.pose.pose.orientation.z, data.pose.pose.orientation.w])
     return right_robot_pos, right_vel, yaw_right 
 
+def velocity_convert(x, y, theta, vel_x, vel_y):
+    '''
+    Robot pose (x, y, theta)  Note - theta in (0, 2pi)
+    Velocity vector (vel_x, vel_y)
+    '''
+
+    gain_ang = 8 #modify if necessary
+    
+    ang = math.atan2(vel_y, vel_x)
+    
+    ang_err = min(max(ang - theta, -ANG_MAX), ANG_MAX)
+    ang_err = 0  # b'coz we are only moving in x-direction without rotataion
+    v_lin = min(max(vel_x, -VEL_MAX), VEL_MAX)
+    v_ang = gain_ang * ang_err
+    return v_lin, v_ang
+
 def balancing():
     rospy.init_node('balancing', anonymous = True)
     rospy.Subscriber('/odom', Odometry, callback_odom) #topic name fixed
@@ -72,13 +81,11 @@ def balancing():
     while itr < 1000: 
         #calculate v_x, v_y as per the balancing strategy
         u = dist(robot_pos, right_robot_pos)-dist(robot_pos, left_robot_pos)
-        # v_x = 0.8*u        # P controller
+        v_x = 1.2*u        # P controller
         # print(v_x)
-        #Make sure your velocity vector is feasible (magnitude and direction)
-        # if vel > VEL_MAX or right_vel > VEL_MAX or left_vel > VEL_MAX:
-        #     break
+    
         #convert velocity vector to linear and angular velocties using velocity_convert function given above
-        v_lin, v_ang = velocity_convert(robot_pos[0], robot_pos[1], yaw, u, 0.0)
+        v_lin, v_ang = velocity_convert(robot_pos[0], robot_pos[1], yaw, v_x, 0.0)
         #publish the velocities below
         vel_msg = Twist()
         vel_msg.linear.x = v_lin
@@ -108,7 +115,23 @@ if __name__ == '__main__':
     yaw_left = 0 
     yaw_right = 0
 
+    # plotting
+    path = [[],[]]
+    total_time = []
+    t_start = 0
+
     try:
         balancing()
+        plt.plot(total_time, path[0])
+        plt.title("Position of robot w.r.t. time")
+        plt.xlabel("time")
+        plt.ylabel("x-position")
+        plt.show()
+        plt.plot(path[0], path[1])
+        plt.title("Path Traced")
+        plt.xlabel("X")
+        plt.ylabel("Y")
+        plt.show()
+
     except rospy.ROSInterruptException:
         pass
