@@ -20,7 +20,7 @@ def velocity_convert(x, y, theta, vel_x, vel_y):
     Velocity vector (vel_x, vel_y)
     '''
 
-    gain_ang = 8 #modify if necessary
+    gain_ang = 5 #modify if necessary
     
     ang = math.atan2(vel_y, vel_x)
     
@@ -35,6 +35,8 @@ def dist(p1,p2):
 
 def norm(x):
     l = math.sqrt(x[0]**2+x[1]**2)
+    if l == 0:
+        return [0,0]
     return [x[0]/l, x[1]/l]
 
 def vector_angle(a,b):
@@ -48,9 +50,7 @@ def callback_obs(data):
     '''
     # print(data)
     n = len(data.obstacles)
-    obs_apex = [[0]*2]*n
-    obs_vel = [[0]*2]*n
-
+    global obs_apex, obs_vel
     i=0
     for obs in data.obstacles:
         obs_apex[i][0] = obs.pose_x
@@ -72,14 +72,14 @@ def callback_odom(data):
     ang_vel = data.twist.twist.angular.z
     return robot_pos, vel, yaw, ang_vel
 
-def feasible_points(apex):
+def feasible_points(vel):
     points = []
     point = [0,0]
     for vel in np.linspace(0, VEL_MAX, 15):
         for ang in np.linspace(yaw-ANG_MAX, yaw+ANG_MAX, 20):
             if vel!=0:
-                point[0] = apex[0] + vel*math.cos(ang)
-                point[1] = apex[1] + vel*math.sin(ang)
+                point[0] = vel + vel*math.cos(ang)
+                point[1] = vel + vel*math.sin(ang)
                 points.append(point)
     return points
 
@@ -97,18 +97,23 @@ def collision_check(pt):
     collide = False
     v_rel =[0,0]
     obs_vec = [0,0]
+    apex_angles = collision_cone()
     for i in range(len(obs_apex)):
         v_rel = [pt[0]-obs_vel[i][0], pt[1]-obs_vel[i][1]]
         obs_vec = [obs_apex[i][0]-robot_pos[0], obs_apex[i][1]-robot_pos[1]]
-        collide = vector_angle(v_rel, obs_vec) < collision_cone[i]
+        collide = vector_angle(v_rel, obs_vec) < apex_angles[i]
+        # print(collide)
     return collide
 
-def feasible_next_step():       # think about it
+def feasible_next_step(): 
+    points = feasible_points(vel)   
     next_step_points = []
     for i in range(len(obs_apex)):
         for pt in points:
+            # print("came here")
             if collision_check(pt):
                 next_step_points.append(pt)
+    print(next_step_points)
     return next_step_points
 
 def optimum_step(goal):
@@ -130,7 +135,7 @@ def collision_avoidance():
 
     pub_vel = rospy.Publisher('/bot_1/cmd_vel', Twist, queue_size = 10)
     r = rospy.Rate(30)
-
+    
     while dist(robot_pos, goal) > 0.3: 
         next_pt = optimum_step(goal)
         v_lin, v_ang = velocity_convert(robot_pos[0], robot_pos[1], yaw, next_pt[0], next_pt[1])
@@ -144,11 +149,6 @@ def collision_avoidance():
         r.sleep()
 
 if __name__ == '__main__':
-    # envt
-    size = 0.15 
-    alpha = 0.7
-    max_angle_dev = 0.175
-    max_vel_dev = 0.05
     start = [0,0]
     goal = [5,0]
 
@@ -157,10 +157,10 @@ if __name__ == '__main__':
     vel = 0              # velocity of the bot
     yaw = 0              # yaw of the bot
 
-    obs_apex= []
-    obs_vel = []
-    points = []
-
+    # obs data
+    obs_apex= [[0]*2]*3
+    obs_vel = [[0]*2]*3
+    
     try:
         collision_avoidance()
     except rospy.ROSInterruptException:
