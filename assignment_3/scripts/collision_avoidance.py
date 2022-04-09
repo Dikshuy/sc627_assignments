@@ -1,15 +1,18 @@
 #!/usr/bin/env python3
 
 import rospy
+import numpy as np
+import matplotlib.pyplot as plt
 from sc627_helper.msg import ObsData
 from geometry_msgs.msg import Twist
 from nav_msgs.msg import Odometry
 from tf.transformations import euler_from_quaternion
 import math
-from math import pi, cos, sin, sqrt, atan2
+import time
 
 ANG_MAX = math.pi/18
 VEL_MAX = 0.15
+OBS_DIA = 0.15
 
 def velocity_convert(x, y, theta, vel_x, vel_y):
     '''
@@ -17,7 +20,7 @@ def velocity_convert(x, y, theta, vel_x, vel_y):
     Velocity vector (vel_x, vel_y)
     '''
 
-    gain_ang = 7 #modify if necessary
+    gain_ang = 8 #modify if necessary
     
     ang = math.atan2(vel_y, vel_x)
     
@@ -34,7 +37,7 @@ def norm(x):
     l = math.sqrt(x[0]**2+x[1]**2)
     return [x[0]/l, x[1]/l]
 
-def cos_from_dot(a,b):
+def vector_angle(a,b):
     a = norm(a)
     b = norm(b)
     return math.acos(a[0]*b[0]+a[1]*b[1])
@@ -45,16 +48,17 @@ def callback_obs(data):
     '''
     # print(data)
     n = len(data.obstacles)
-    obs_cone_pos = [[0]*2]*n
-    obs_cone_axis = [[0]*2]*n 
-    obs_cone_ang = [0]*n 
-    cnt=0
-    for i in data.obstacles:
-        obs_cone_ang[cnt]=math.asin(2*size/(dist(robot_pos,[i.pose_x,i.pose_y])))
-        obs_cone_pos[cnt]=[i.vel_x,i.vel_y]
-        obs_cone_axis[cnt]=norm([i.pose_x-robot_pos[0],i.pose_y-robot_pos[1]])
-        cnt+=1
-    return obs_cone_pos, obs_cone_axis, obs_cone_ang
+    obs_apex = [[0]*2]*n
+    obs_vel = [[0]*2]*n
+
+    i=0
+    for obs in data.obstacles:
+        obs_apex[i][0] = obs.pose_x
+        obs_apex[i][1] = obs.pose_y
+        obs_vel[i][0] = obs.vel_x
+        obs_vel[i][1] = obs.vel_y
+        i += 1
+    return obs_apex, obs_vel
 
 def callback_odom(data):
     '''
@@ -68,52 +72,56 @@ def callback_odom(data):
     ang_vel = data.twist.twist.angular.z
     return robot_pos, vel, yaw, ang_vel
 
-def dist_to_edge(angle):
-    if (angle>=-pi/4 and angle<=pi/4):
-        return max_vel_dev/cos(angle)
-    elif(angle>=pi/4 and angle<=3*pi/4):
-        return max_vel_dev/sin(angle)
-    elif (angle>=3*pi/4 and angle<=5*pi/4):
-        return max_vel_dev/cos(pi-angle)
-    else:
-        return max_vel_dev/cos(3*pi/2-angle)
+def feasible_points(apex):
+    points = []
+    point = [0,0]
+    for vel in np.linspace(0, VEL_MAX, 15):
+        for ang in np.linspace(yaw-ANG_MAX, yaw+ANG_MAX, 20):
+            if vel!=0:
+                point[0] = apex[0] + vel*math.cos(ang)
+                point[1] = apex[1] + vel*math.sin(ang)
+                points.append(point)
+    return points
 
-def collision(vel):
-    cnt = 0
-    for i in obs_cone_pos:
-        if cos_from_dot(obs_cone_axis[cnt], [vel[0]-i[0], vel[1]-i[1]])<obs_cone_ang[cnt]:
-            return False
-        cnt += 1
-    return True
+def collision_cone():
+    apex_angles = []
+    for i in range(len(obs_apex)):
+        dist_from_obs = dist(obs_apex[i], robot_pos)
+        if OBS_DIA > dist_from_obs:
+            apex_angles.append(math.pi/2)
+        else:
+            apex_angles.append(math.asin(OBS_DIA/dist_from_obs))
+    return apex_angles
 
-def v_max_check(vel):
-        return sqrt(vel[0]**2+vel[1]**2)<VEL_MAX
+def collision_check(pt):
+    collide = False
+    v_rel =[0,0]
+    obs_vec = [0,0]
+    for i in range(len(obs_apex)):
+        v_rel = [pt[0]-obs_vel[i][0], pt[1]-obs_vel[i][1]]
+        obs_vec = [obs_apex[i][0]-robot_pos[0], obs_apex[i][1]-robot_pos[1]]
+        collide = vector_angle(v_rel, obs_vec) < collision_cone[i]
+    return collide
 
-def check_in_max_theta_dev(vel):
-        ang = atan2(vel[1], vel[0])
-        return abs(ang-yaw)< max_angle_dev
+def feasible_next_step():       # think about it
+    next_step_points = []
+    for i in range(len(obs_apex)):
+        for pt in points:
+            if collision_check(pt):
+                next_step_points.append(pt)
+    return next_step_points
 
-def velocity_sample(goal):
-    for i in range(35):
-        moving_dir = math.atan2(goal[1]-robot_pos[1], goal[0]-robot_pos[0]) + alpha*i/34
-        d = dist_to_edge(moving_dir)
-        for j in range(6):
-            vel_arr = [vel*math.cos(yaw)+cos(moving_dir)*(5-j)/5*d, vel*math.sin(yaw)+sin(moving_dir)*(5-j)/5*d] 
-            collision_free = collision(vel_arr)
-            v = v_max_check(vel_arr)
-            ang = check_in_max_theta_dev(vel_arr)
-            if collision_free and v and ang:
-                return vel_arr 
-        moving_dir = math.atan2(goal[1]-robot_pos[1], goal[0]-robot_pos[0]) - alpha*i/34
-        d = dist_to_edge(moving_dir)
-        for j in range(6):
-            vel_arr = [vel*math.cos(yaw)+cos(moving_dir)*(5-j)/5*d, vel*math.sin(yaw)+sin(moving_dir)*(5-j)/5*d] 
-            collision_free = collision(vel_arr)
-            v = v_max_check(vel_arr)
-            ang = check_in_max_theta_dev(vel_arr)
-            if collision_free and v and ang:
-                return vel_arr 
-    return [0,0]
+def optimum_step(goal):
+    goal_dir = [goal[0]-robot_pos[0], goal[1]-robot_pos[1]]
+    next_step_points = feasible_next_step()
+    min_dev = 2*math.pi 
+    min_dev_pt = [0,0]
+    for pt in next_step_points:
+        curr_ang = vector_angle(goal_dir, pt)
+        if curr_ang < min_dev:
+            min_dev = curr_ang
+            min_dev_pt = pt 
+    return min_dev_pt
 
 def collision_avoidance():
     rospy.init_node('assign3_skeleton', anonymous = True)
@@ -124,8 +132,8 @@ def collision_avoidance():
     r = rospy.Rate(30)
 
     while dist(robot_pos, goal) > 0.3: 
-        vel_arr = velocity_sample(goal)
-        v_lin, v_ang = velocity_convert(robot_pos[0], robot_pos[1], yaw, vel_arr[0], vel_arr[1])
+        next_pt = optimum_step(goal)
+        v_lin, v_ang = velocity_convert(robot_pos[0], robot_pos[1], yaw, next_pt[0], next_pt[1])
         vel_msg = Twist()
         vel_msg.linear.x = v_lin
         vel_msg.angular.z = v_ang
@@ -149,14 +157,11 @@ if __name__ == '__main__':
     vel = 0              # velocity of the bot
     yaw = 0              # yaw of the bot
 
-    obs_cone_pos = []
-    obs_cone_axis = []
-    obs_cone_ang = []
+    obs_apex= []
+    obs_vel = []
+    points = []
 
     try:
         collision_avoidance()
     except rospy.ROSInterruptException:
         pass
-
-
-
