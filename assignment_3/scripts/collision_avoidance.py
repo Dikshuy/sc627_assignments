@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import rospy
+import copy
 import numpy as np
 import matplotlib.pyplot as plt
 from sc627_helper.msg import ObsData
@@ -53,10 +54,8 @@ def callback_obs(data):
     global obs_apex, obs_vel
     i=0
     for obs in data.obstacles:
-        obs_apex[i][0] = obs.pose_x
-        obs_apex[i][1] = obs.pose_y
-        obs_vel[i][0] = obs.vel_x
-        obs_vel[i][1] = obs.vel_y
+        obs_apex[i] = [obs.pose_x, obs.pose_y]
+        obs_vel[i] = [obs.vel_x, obs.vel_y]
         i += 1
     return obs_apex, obs_vel
 
@@ -65,22 +64,23 @@ def callback_odom(data):
     Get robot data
     '''
     # print(data)
+    global robot_pos, vel, yaw
     robot_pos[0] = data.pose.pose.position.x 
     robot_pos[1] = data.pose.pose.position.y 
     vel = data.twist.twist.linear.x 
     roll, pitch, yaw = euler_from_quaternion([data.pose.pose.orientation.x, data.pose.pose.orientation.y, data.pose.pose.orientation.z, data.pose.pose.orientation.w])
-    ang_vel = data.twist.twist.angular.z
-    return robot_pos, vel, yaw, ang_vel
+    path[0].append(robot_pos[0])
+    path[1].append(robot_pos[1])
+    total_time.append(time.time()-t_start)
+    return robot_pos, vel, yaw
 
-def feasible_points(vel):
+def feasible_points():
     points = []
-    point = [0,0]
-    for vel in np.linspace(0, VEL_MAX, 15):
+    for v in np.linspace(0, VEL_MAX, 10):
         for ang in np.linspace(yaw-ANG_MAX, yaw+ANG_MAX, 20):
             if vel!=0:
-                point[0] = vel + vel*math.cos(ang)
-                point[1] = vel + vel*math.sin(ang)
-                points.append(point)
+                points.append([vel+v*math.cos(ang), vel+v*math.sin(ang)])
+    # print(points)
     return points
 
 def collision_cone():
@@ -90,7 +90,8 @@ def collision_cone():
         if OBS_DIA > dist_from_obs:
             apex_angles.append(math.pi/2)
         else:
-            apex_angles.append(math.asin(OBS_DIA/dist_from_obs))
+            apex_angles.append(math.asin(OBS_DIA/(2*dist_from_obs)))
+    # print(apex_angles)
     return apex_angles
 
 def collision_check(pt):
@@ -102,18 +103,16 @@ def collision_check(pt):
         v_rel = [pt[0]-obs_vel[i][0], pt[1]-obs_vel[i][1]]
         obs_vec = [obs_apex[i][0]-robot_pos[0], obs_apex[i][1]-robot_pos[1]]
         collide = vector_angle(v_rel, obs_vec) < apex_angles[i]
-        # print(collide)
     return collide
 
 def feasible_next_step(): 
-    points = feasible_points(vel)   
+    points = feasible_points()  
     next_step_points = []
     for i in range(len(obs_apex)):
         for pt in points:
-            # print("came here")
             if collision_check(pt):
                 next_step_points.append(pt)
-    print(next_step_points)
+    # print(next_step_points)
     return next_step_points
 
 def optimum_step(goal):
@@ -139,6 +138,8 @@ def collision_avoidance():
     while dist(robot_pos, goal) > 0.3: 
         next_pt = optimum_step(goal)
         v_lin, v_ang = velocity_convert(robot_pos[0], robot_pos[1], yaw, next_pt[0], next_pt[1])
+        # print(v_lin, v_ang)
+        # print(robot_pos)
         vel_msg = Twist()
         vel_msg.linear.x = v_lin
         vel_msg.angular.z = v_ang
@@ -161,7 +162,23 @@ if __name__ == '__main__':
     obs_apex= [[0]*2]*3
     obs_vel = [[0]*2]*3
     
+    # plotting
+    path = [[],[]]
+    total_time = []
+    t_start = 0
+
     try:
         collision_avoidance()
+        plt.plot(total_time, path[0])
+        plt.title("Position of robot w.r.t. time")
+        plt.xlabel("time")
+        plt.ylabel("x-position")
+        plt.show()
+        plt.plot(path[0], path[1])
+        plt.title("Path Traced")
+        plt.xlabel("X")
+        plt.ylabel("Y")
+        plt.show()
+
     except rospy.ROSInterruptException:
         pass
